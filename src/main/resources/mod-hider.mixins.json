@@ -1,0 +1,20 @@
+{
+	"required": true,
+	"package": "dev.modhider.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"plugin": "dev.modhider.mixin.ModHiderMixinPlugin",
+	"client": [
+		"CreativeModeInventoryScreenMixin",
+		"CreativeModeTabAccessor",
+		"CreativeModeTabMixin",
+		"KeyBindsListMixin",
+		"KeyMappingMixin",
+		"compat.controlling.NewKeyBindsListMixin",
+		"compat.modmenu.FabricDummyParentModMixin",
+		"compat.modmenu.FabricModMixin",
+		"compat.modmenu.ModListWidgetMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

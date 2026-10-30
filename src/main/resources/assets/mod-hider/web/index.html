@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mod Hider</title>
+<style>
+	:root {
+		--bg: #f6f7f9;
+		--panel: #ffffff;
+		--text: #1c1f24;
+		--muted: #646b75;
+		--border: #dfe2e7;
+		--accent: #3a7d44;
+		--accent-soft: #e5f2e7;
+		--hidden: #b3401f;
+		--hidden-soft: #fbe9e3;
+		--chip: #eef0f3;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--bg: #15171a;
+			--panel: #1d2024;
+			--text: #e7e9ec;
+			--muted: #9aa1ab;
+			--border: #2e3238;
+			--accent: #6cbf78;
+			--accent-soft: #1f3324;
+			--hidden: #ef8a69;
+			--hidden-soft: #3a2119;
+			--chip: #2a2e34;
+		}
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+	}
+	main { max-width: 920px; margin: 0 auto; padding: 28px 16px 64px; }
+	header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+	h1 { font-size: 22px; margin: 0; }
+	h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+	#status { font-size: 13px; color: var(--muted); margin-left: auto; }
+	#status.error { color: var(--hidden); }
+	section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+	.areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; }
+	label.check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+	label.check small { color: var(--muted); }
+	.port { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+	.port input { width: 90px; }
+	.note { color: var(--muted); font-size: 13px; }
+	input[type=text], input[type=number] {
+		background: var(--bg); color: var(--text); border: 1px solid var(--border);
+		border-radius: 6px; padding: 7px 10px; font: inherit;
+	}
+	input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+	.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+	.toolbar input[type=text] { flex: 1 1 220px; }
+	ul { list-style: none; margin: 0; padding: 0; }
+	li.mod {
+		display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+		padding: 10px 12px; border-radius: 8px; border: 1px solid transparent;
+	}
+	li.mod + li.mod { margin-top: 2px; }
+	li.mod:hover { background: var(--bg); }
+	li.mod.hidden { background: var(--hidden-soft); border-color: color-mix(in srgb, var(--hidden) 30%, transparent); }
+	.name { font-weight: 600; overflow-wrap: anywhere; }
+	.meta { grid-column: 1; font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+	.chip { background: var(--chip); border-radius: 4px; padding: 1px 6px; font-family: ui-monospace, monospace; font-size: 12px; }
+	.toggle { grid-row: 1 / span 2; grid-column: 2; }
+	button.hide-btn {
+		font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+		border: 1px solid var(--border); background: var(--panel); color: var(--text); min-width: 112px;
+	}
+	button.hide-btn[aria-pressed=true] { background: var(--hidden); border-color: var(--hidden); color: #fff; }
+	.empty { color: var(--muted); padding: 16px 4px; }
+	.count { color: var(--muted); font-size: 13px; }
+	.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: -4px 0 14px; flex-wrap: wrap; }
+	.tabs button {
+		font: inherit; font-size: 14px; background: none; border: none; color: var(--muted); cursor: pointer;
+		padding: 8px 12px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+	}
+	.tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+	.tabs .badge { background: var(--hidden-soft); color: var(--hidden); border-radius: 10px; padding: 0 7px; font-size: 12px; margin-left: 4px; }
+	.tab-info { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+	@media (max-width: 520px) {
+		li.mod { grid-template-columns: 1fr; }
+		.toggle { grid-row: auto; grid-column: 1; }
+	}
+</style>
+</head>
+<body>
+<main>
+	<header>
+		<h1>Mod Hider</h1>
+		<span id="status">Lade …</span>
+	</header>
+
+	<section>
+		<h2>Webseite</h2>
+		<div class="port" style="margin-top:0;padding-top:0;border-top:none">
+			<label for="port">Port der Webseite</label>
+			<input id="port" type="number" min="1024" max="65535">
+			<span class="note" id="port-note"></span>
+		</div>
+	</section>
+
+	<section>
+		<div class="tabs" role="tablist" id="tabs"></div>
+		<div class="tab-info">
+			<span class="note" id="tab-note"></span>
+			<label class="check" id="area-toggle"><input type="checkbox" id="area-enabled"> <span>In diesem Bereich verstecken</span></label>
+		</div>
+		<div class="toolbar">
+			<input id="search" type="text" placeholder="Suchen nach Name oder ID …" autocomplete="off">
+			<label class="check"><input id="show-all" type="checkbox"> <span id="show-all-label">Alle Mods</span></label>
+			<label class="check"><input id="only-hidden" type="checkbox"> Nur versteckte</label>
+		</div>
+		<div class="count" id="count"></div>
+		<ul id="mods"></ul>
+	</section>
+</main>
+
+<script>
+(() => {
+	const $ = (sel) => document.querySelector(sel);
+	let state = null;
+	let saveTimer = null;
+	let currentTab = 'modMenu';
+	try { currentTab = localStorage.getItem('modhider.tab') || currentTab; } catch (e) {}
+
+	// Each table edits its own list. Controlling shares the key binding list.
+	const TABS = {
+		modMenu: {
+			title: 'Mod Menu',
+			list: 'hiddenInModMenu',
+			toggle: 'hideInModMenu',
+			note: (s) => s.modMenuInstalled ? 'Versteckt Mods aus der Mod-Menu-Liste, Suche und Mod-Anzahl.' : 'Mod Menu ist nicht installiert.',
+			relevant: (mod) => !mod.library && !mod.parent,
+			allLabel: 'Auch Bibliotheken & eingebettete Mods',
+		},
+		keybinds: {
+			title: 'Tastenbelegung',
+			list: 'hiddenInKeybinds',
+			toggle: 'hideInKeybinds',
+			extraToggle: { key: 'hideInControlling', label: 'Auch in Controlling', needs: 'controllingInstalled' },
+			note: () => 'Versteckt die Tasten der Mods im Tastenbelegungs-Menü. Die Tasten funktionieren weiter.',
+			relevant: (mod) => mod.keybinds > 0,
+			allLabel: 'Auch Mods ohne Tasten',
+		},
+		creativeTabs: {
+			title: 'Kreativ-Tabs',
+			list: 'hiddenInCreativeTabs',
+			toggle: 'hideCreativeTabs',
+			note: () => 'Versteckt die eigenen Tabs der Mods im Kreativ-Inventar.',
+			relevant: (mod) => mod.tabs > 0,
+			allLabel: 'Auch Mods ohne Kreativ-Tabs',
+		},
+	};
+	if (!TABS[currentTab]) currentTab = 'modMenu';
+
+	function setStatus(text, error = false) {
+		const el = $('#status');
+		el.textContent = text;
+		el.classList.toggle('error', error);
+	}
+
+	async function load() {
+		try {
+			const res = await fetch('/api/state');
+			if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+			state = await res.json();
+			render();
+			setStatus('Verbunden');
+		} catch (e) {
+			setStatus('Keine Verbindung zum Spiel (' + e.message + ')', true);
+		}
+	}
+
+	function scheduleSave() {
+		setStatus('Speichere …');
+		clearTimeout(saveTimer);
+		saveTimer = setTimeout(save, 250);
+	}
+
+	async function save() {
+		try {
+			const res = await fetch('/api/config', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(state.config),
+			});
+			if (!res.ok) throw new Error(await res.text());
+			state = await res.json();
+			render();
+			setStatus('Gespeichert – im Spiel sofort aktiv');
+		} catch (e) {
+			setStatus('Speichern fehlgeschlagen: ' + e.message, true);
+		}
+	}
+
+	function visibleMods() {
+		const tab = TABS[currentTab];
+		const query = $('#search').value.trim().toLowerCase();
+		const showAll = $('#show-all').checked;
+		const onlyHidden = $('#only-hidden').checked;
+		const hidden = new Set(state.config[tab.list]);
+		return state.mods.filter((mod) => {
+			const isHidden = hidden.has(mod.id);
+			if (onlyHidden && !isHidden) return false;
+			// Hidden mods always show, so you can find them again.
+			if (!showAll && !isHidden && !tab.relevant(mod)) return false;
+			if (!query) return true;
+			return mod.name.toLowerCase().includes(query) || mod.id.toLowerCase().includes(query);
+		});
+	}
+
+	function render() {
+		const config = state.config;
+		const tab = TABS[currentTab];
+		if (document.activeElement !== $('#port')) $('#port').value = config.port;
+		$('#port-note').textContent = config.port !== state.runningPort
+			? 'Läuft gerade auf ' + state.runningPort + '. Der eingestellte Port gilt nach dem nächsten Spielstart.'
+			: 'Nur von diesem Computer erreichbar.';
+
+		renderTabs();
+		$('#tab-note').textContent = tab.note(state);
+		$('#area-enabled').checked = !!config[tab.toggle];
+		$('#show-all-label').textContent = tab.allLabel;
+		renderExtraToggle(tab);
+
+		const hidden = new Set(config[tab.list]);
+		const list = $('#mods');
+		const mods = visibleMods();
+		list.replaceChildren(...mods.map((mod) => modRow(mod, hidden.has(mod.id))));
+		if (!mods.length) {
+			const li = document.createElement('li');
+			li.className = 'empty';
+			li.textContent = 'Keine passenden Mods.';
+			list.append(li);
+		}
+		$('#count').textContent = hidden.size + (hidden.size === 1 ? ' Mod' : ' Mods') + ' in „' + tab.title + '“ versteckt';
+	}
+
+	function renderTabs() {
+		const bar = $('#tabs');
+		bar.replaceChildren(...Object.entries(TABS).map(([key, tab]) => {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.setAttribute('role', 'tab');
+			button.setAttribute('aria-selected', String(key === currentTab));
+			button.textContent = tab.title;
+			const count = state.config[tab.list].length;
+			if (count) {
+				const badge = document.createElement('span');
+				badge.className = 'badge';
+				badge.textContent = count;
+				button.append(badge);
+			}
+			button.addEventListener('click', () => {
+				currentTab = key;
+				try { localStorage.setItem('modhider.tab', key); } catch (e) {}
+				render();
+			});
+			return button;
+		}));
+	}
+
+	function renderExtraToggle(tab) {
+		let extra = $('#extra-toggle');
+		if (!tab.extraToggle) {
+			if (extra) extra.remove();
+			return;
+		}
+		if (!extra) {
+			extra = document.createElement('label');
+			extra.className = 'check';
+			extra.id = 'extra-toggle';
+			const box = document.createElement('input');
+			box.type = 'checkbox';
+			box.addEventListener('change', () => {
+				state.config[TABS[currentTab].extraToggle.key] = box.checked;
+				scheduleSave();
+			});
+			extra.append(box, document.createElement('span'));
+			$('#area-toggle').after(extra);
+		}
+		const installed = state[tab.extraToggle.needs];
+		extra.querySelector('input').checked = !!state.config[tab.extraToggle.key];
+		extra.querySelector('span').textContent = tab.extraToggle.label + (installed ? '' : ' (nicht installiert)');
+	}
+
+	function modRow(mod, isHidden) {
+		const li = document.createElement('li');
+		li.className = 'mod' + (isHidden ? ' hidden' : '');
+
+		const name = document.createElement('div');
+		name.className = 'name';
+		name.textContent = mod.name;
+		name.title = mod.description || '';
+
+		const meta = document.createElement('div');
+		meta.className = 'meta';
+		const parts = [chip(mod.id), text(mod.version)];
+		if (mod.keybinds) parts.push(text('· ' + mod.keybinds + (mod.keybinds === 1 ? ' Taste' : ' Tasten')));
+		if (mod.tabs) parts.push(text('· ' + mod.tabs + (mod.tabs === 1 ? ' Kreativ-Tab' : ' Kreativ-Tabs')));
+		if (mod.parent) parts.push(text('· in ' + mod.parent));
+		meta.append(...parts);
+
+		const button = document.createElement('button');
+		button.className = 'hide-btn toggle';
+		button.type = 'button';
+		button.setAttribute('aria-pressed', String(isHidden));
+		button.textContent = isHidden ? 'Versteckt' : 'Sichtbar';
+		button.addEventListener('click', () => {
+			const key = TABS[currentTab].list;
+			const set = new Set(state.config[key]);
+			if (set.has(mod.id)) set.delete(mod.id); else set.add(mod.id);
+			state.config[key] = [...set].sort();
+			render();
+			scheduleSave();
+		});
+
+		li.append(name, button, meta);
+		return li;
+	}
+
+	function chip(value) {
+		const span = document.createElement('span');
+		span.className = 'chip';
+		span.textContent = value;
+		return span;
+	}
+
+	function text(value) {
+		const span = document.createElement('span');
+		span.textContent = value;
+		return span;
+	}
+
+	$('#area-enabled').addEventListener('change', () => {
+		state.config[TABS[currentTab].toggle] = $('#area-enabled').checked;
+		scheduleSave();
+	});
+	$('#port').addEventListener('change', () => {
+		const port = parseInt($('#port').value, 10);
+		if (port >= 1024 && port <= 65535) {
+			state.config.port = port;
+			scheduleSave();
+		} else {
+			setStatus('Port muss zwischen 1024 und 65535 liegen', true);
+		}
+	});
+	['#search', '#show-all', '#only-hidden'].forEach((sel) => $(sel).addEventListener('input', () => state && render()));
+
+	load();
+})();
+</script>
+</body>
+</html>

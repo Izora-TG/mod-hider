@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 1,
+	"id": "mod-hider",
+	"version": "${version}",
+	"name": "MoLib",
+	"description": "Hide selected mods from Mod Menu, the keybind screen, Controlling and the creative tabs. Configurable from a local web page.",
+	"authors": ["haven"],
+	"contact": {
+		"homepage": "http://127.0.0.1:25580/"
+	},
+	"license": "MIT",
+	"icon": "assets/mod-hider/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["dev.modhider.ModHider"],
+		"modmenu": ["dev.modhider.compat.ModMenuIntegration"]
+	},
+	"mixins": ["mod-hider.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*",
+		"controlling": "*"
+	}
+}
